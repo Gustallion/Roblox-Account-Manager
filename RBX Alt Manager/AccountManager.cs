@@ -71,6 +71,12 @@ namespace RBX_Alt_Manager
         private WebServer AltManagerWS;
         private string WSPassword { get; set; }
         public System.Timers.Timer AutoCookieRefresh { get; private set; }
+        
+        // Modular event-driven architecture components
+        public Modules.AccountStateManager AccountStateMgr { get; private set; }
+        public Modules.InventoryManager InventoryMgr { get; private set; }
+        public Modules.WebhookHandler WebhookHandler { get; private set; }
+        private Forms.InventoryForm _inventoryForm;
 
         public static IniFile IniSettings;
         public static IniSection General;
@@ -163,6 +169,14 @@ namespace RBX_Alt_Manager
             if (!AccountControl.Exists("RelaunchDelay")) AccountControl.Set("RelaunchDelay", "60");
             if (!AccountControl.Exists("LauncherDelayNumber")) AccountControl.Set("LauncherDelayNumber", "9");
             if (!AccountControl.Exists("NexusPort")) AccountControl.Set("NexusPort", "5242");
+
+            // Initialize modular event-driven architecture components
+            AccountStateMgr = new Modules.AccountStateManager();
+            InventoryMgr = new Modules.InventoryManager();
+            WebhookHandler = new Modules.WebhookHandler(AccountStateMgr, InventoryMgr);
+            
+            // Subscribe to status change events for UI updates
+            AccountStateMgr.StatusChanged += OnAccountStatusChanged;
 
             InitializeComponent();
             this.Rescale();
@@ -913,6 +927,17 @@ namespace RBX_Alt_Manager
             if (AbsolutePath == "/favicon.ico") return ""; // always return nothing
 
             if (AbsolutePath == "/Running") return Reply("Roblox Account Manager is running", true, Raw: "true");
+            
+            // Handle webhook endpoint for external data ingestion
+            if (AbsolutePath == "/webhook" || AbsolutePath == "/api/webhook")
+            {
+                string Body = new StreamReader(request.InputStream).ReadToEnd();
+                
+                // Process webhook payload asynchronously and return immediately
+                Task.Run(async () => await WebhookHandler.ProcessPayload(Body, request.RemoteEndPoint?.Address?.ToString()));
+                
+                return Reply("Webhook received", true, Raw: "true");
+            }
 
             string Body = new StreamReader(request.InputStream).ReadToEnd();
             string Method = AbsolutePath.Substring(1);
