@@ -109,6 +109,13 @@ namespace RBX_Alt_Manager
 
         public AccountManager()
         {
+            // Prevent complex initialization in designer mode
+            if (DesignMode)
+            {
+                InitializeComponent();
+                return;
+            }
+
             Instance = this;
 
             ThemeEditor.LoadTheme();
