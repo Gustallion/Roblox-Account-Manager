@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
 using RBX_Alt_Manager.Classes;
 using RBX_Alt_Manager.Forms;
+using RBX_Alt_Manager.Modules;
 using RBX_Alt_Manager.Properties;
 using RestSharp;
 using Sodium;
